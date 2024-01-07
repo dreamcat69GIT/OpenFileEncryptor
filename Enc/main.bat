@@ -1,0 +1,2 @@
+python OpenFileEncryptor.py
+pause
