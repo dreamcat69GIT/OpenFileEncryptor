@@ -1,3 +1,2 @@
 In this version:
-Fixed problem with downloading updates.
-The update window now displays a change log.
+The new previous version of the program is removed automatically.
