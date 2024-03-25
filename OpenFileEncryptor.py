@@ -28,6 +28,17 @@ icon_image = CTkImage(Image.open(f'{assets_path}/Exit.png'), size=(30, 30))
 
 version = '1.2.2'
 
+def delete_old_versions():
+    global program_path, old_filename
+    program_path = os.getcwd()
+    old_filename = "oldOFE.exe"
+    try:
+        os.remove(os.path.join(program_path, old_filename))
+    except FileNotFoundError:
+        pass
+
+delete_old_versions()
+
 def check_for_updates(version):
     try:
         global download_url, updater_app, current_version, start_update_gui, button_update, update_gui
@@ -79,6 +90,7 @@ def pre_update():
     button_update.destroy()
     while thread.is_alive():
         time.sleep(1)
+    os.rename(sys.argv[0], os.path.join(program_path, old_filename))
     update_gui()
 
 def close_window():
@@ -102,16 +114,6 @@ def start_new_version():
     program_path = os.getcwd()
     full_path = os.path.join(program_path, new_filename)
     os.execl(full_path, *sys.argv)
-
-def delete_old_versions():
-    program_path = os.getcwd()
-    old_filename = "oldOFE.exe"
-    try:
-        os.remove(os.path.join(program_path, old_filename))
-    except FileNotFoundError:
-        pass
-
-delete_old_versions()
 
 def create_new_settings_file():
     config = configparser.ConfigParser()
