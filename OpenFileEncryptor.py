@@ -26,7 +26,7 @@ app.resizable(width=False, height=False)
 
 icon_image = CTkImage(Image.open(f'{assets_path}/Exit.png'), size=(30, 30))
 
-version = '1.2.1'
+version = '1.2.2'
 
 def check_for_updates(version):
     try:
@@ -63,13 +63,13 @@ def check_for_updates(version):
                 button_close.destroy()
                 changelog.destroy()
                 changelog_text.destroy()
+                start_new_version()
                 timer = threading.Timer(5, stop_program)
                 timer.start()
     except:
         pass
 
 def stop_program():
-    start_new_version()
     os.abort()
 
 
