@@ -1,5 +1,6 @@
 {
-    "current_version": "1.2.2",
-    "download_url": "https://github.com/dreamcat69GIT/OpenFileEncryptor/releases/download/OFE_1.2.2/OpenFileEncryptor.exe",
-    "note": "https://raw.githubusercontent.com/dreamcat69GIT/OpenFileEncryptor/main/changelog.md"
+    "current_version": "1.2.4",
+    "download_url": "https://github.com/dreamcat69GIT/OpenFileEncryptor/releases/download/OFE_1.2.4/OpenFileEncryptor.exe",
+    "note": "https://raw.githubusercontent.com/dreamcat69GIT/OpenFileEncryptor/main/changelog.md",
+    "update_type": "stable"
   }
