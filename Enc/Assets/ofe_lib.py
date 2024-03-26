@@ -6,7 +6,7 @@ from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import hashes, hmac
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 
-version = "1.2.2"
+version = "1.2.4"
 
 bufferSizeDef = 64 * 1024
 
