@@ -9,7 +9,6 @@ import threading
 import configparser
 import os
 import requests
-import time
 
 
 assets_path = os.path.join(sys._MEIPASS, 'Assets') if getattr(sys, 'frozen', False) else 'Assets'
@@ -26,7 +25,7 @@ app.resizable(width=False, height=False)
 
 icon_image = CTkImage(Image.open(f'{assets_path}/Exit.png'), size=(30, 30))
 
-version = '1.2.2'
+version = '1.2.4'
 
 def delete_old_versions():
     global program_path, old_filename
@@ -46,52 +45,87 @@ def check_for_updates(version):
         response = requests.get(json_url)
         data = response.json()
         current_version = data["current_version"]
-        if current_version > version:
-            updater_app = customtkinter.CTkToplevel(app)
-            updater_app.title('OpenFileEncryptor – Updater')
-            updater_app.iconbitmap(f'{assets_path}/Icon.ico')
-            updater_app.geometry("400x200")
-            updater_app.resizable(width=False, height=False)
-            new_update_label = customtkinter.CTkLabel(updater_app, text=f'{new_update_label_lan}', fg_color="transparent")
-            new_update_label.pack()
-            download_url = data["download_url"]
-            changelog_md = data['note']
-            response = requests.get(changelog_md)
-            if response.status_code == 200:
-                changelog = customtkinter.CTkLabel(updater_app, text=f'{changelog_lan}')
-                changelog.place(x=10, y=20)
-                changelog_content = response.text
-                changelog_text = customtkinter.CTkLabel(updater_app, text=changelog_content)
-                changelog_text.place(x=10, y=40)
-            version_to_version = customtkinter.CTkLabel(updater_app, text=f'{version_to_version_lan}' + f'{current_version}')
-            version_to_version.place(x=10, y=110)
-            button_update = customtkinter.CTkButton(updater_app, text=f'{button_update_lan}', height=35, width=140, command=pre_update)
-            button_update.place(x=250, y=150)
-            button_close = customtkinter.CTkButton(updater_app, text=f'{button_close_lan}', height=35, width=140, command=close_window)
-            button_close.place(x=10, y=150)
-            def update_gui():
-                button_update.destroy()
-                button_close.destroy()
-                changelog.destroy()
-                changelog_text.destroy()
-                start_new_version()
-                timer = threading.Timer(5, stop_program)
-                timer.start()
+        update_type = data["update_type"]
+        if update_type == 'stable':
+            if current_version > version:
+                updater_app = customtkinter.CTkToplevel(app)
+                updater_app.title('OpenFileEncryptor – Updater')
+                updater_app.iconbitmap(f'{assets_path}/Icon.ico')
+                updater_app.geometry("400x200")
+                updater_app.resizable(width=False, height=False)
+                new_update_label = customtkinter.CTkLabel(updater_app, text=f'{new_update_label_lan}', fg_color="transparent")
+                new_update_label.pack()
+                download_url = data["download_url"]
+                changelog_md = data['note']
+                response = requests.get(changelog_md)
+                if response.status_code == 200:
+                    changelog_content = response.text
+                    changelog_text = customtkinter.CTkTextbox(updater_app, state = DISABLED,width=400, height=70)
+                    changelog_text.place(x=0,y=30)
+                    changelog_text.configure(state = NORMAL)
+                    changelog_text.insert(0.0, changelog_content)
+                    changelog_text.insert(0.0, changelog_lan + f'\n')
+                    changelog_text.configure(state=DISABLED)
+                version_to_version = customtkinter.CTkLabel(updater_app, text=f'{version_to_version_lan}' + f'{current_version}')
+                version_to_version.place(x=10, y=110)
+                button_update = customtkinter.CTkButton(updater_app, text=f'{button_update_lan}', height=35, width=140, command=pre_update)
+                button_update.place(x=250, y=150)
+                button_close = customtkinter.CTkButton(updater_app, text=f'{button_close_lan}', height=35, width=140, command=close_window)
+                button_close.place(x=10, y=150)
+        elif update_type == 'critical':
+            if current_version > version:
+                updater_app = customtkinter.CTkToplevel(app)
+                updater_app.title('OpenFileEncryptor – Updater')
+                updater_app.iconbitmap(f'{assets_path}/Icon.ico')
+                updater_app.geometry("400x200")
+                updater_app.resizable(width=False, height=False)
+                new_update_label = customtkinter.CTkLabel(updater_app, text=f'{new_update_label_critical_lan}', fg_color="transparent")
+                new_update_label.pack()
+                download_url = data["download_url"]
+                changelog_md = data['note']
+                response = requests.get(changelog_md)
+                if response.status_code == 200:
+                    changelog_content = response.text
+                    changelog_text = customtkinter.CTkTextbox(updater_app, state = DISABLED,width=400, height=70)
+                    changelog_text.place(x=0,y=30)
+                    changelog_text.configure(state = NORMAL)
+                    changelog_text.insert(0.0, changelog_content)
+                    changelog_text.insert(0.0, changelog_lan + f'\n')
+                    changelog_text.configure(state=DISABLED)
+                version_to_version = customtkinter.CTkLabel(updater_app, text=f'{version_to_version_lan}' + f'{current_version}')
+                version_to_version.place(x=130, y=110)
+                pre_update()
+        else:
+            if current_version > version:
+                updater_app = customtkinter.CTkToplevel(app)
+                updater_app.title('OpenFileEncryptor – Updater')
+                updater_app.iconbitmap(f'{assets_path}/Icon.ico')
+                updater_app.geometry("400x200")
+                updater_app.resizable(width=False, height=False)
+                new_update_label = customtkinter.CTkLabel(updater_app, text=f'{new_update_label_critical_lan}', fg_color="transparent")
+                new_update_label.pack()
+                download_url = data["download_url"]
+                changelog_md = data['note']
+                response = requests.get(changelog_md)
+                if response.status_code == 200:
+                    changelog_content = response.text
+                    changelog_text = customtkinter.CTkTextbox(updater_app, state = DISABLED,width=400, height=70)
+                    changelog_text.place(x=0,y=30)
+                    changelog_text.configure(state = NORMAL)
+                    changelog_text.insert(0.0, changelog_content)
+                    changelog_text.insert(0.0, changelog_lan + f'\n')
+                    changelog_text.configure(state=DISABLED)
+                version_to_version = customtkinter.CTkLabel(updater_app, text=f'{version_to_version_lan}' + f'{current_version}')
+                version_to_version.place(x=130, y=110)
+                pre_update()
     except:
         pass
-
-def stop_program():
-    os.abort()
-
 
 def pre_update():
     thread = threading.Thread(target=update)
     thread.start()
     button_update.destroy()
-    while thread.is_alive():
-        time.sleep(1)
     os.rename(sys.argv[0], os.path.join(program_path, old_filename))
-    update_gui()
 
 def close_window():
     updater_app.destroy()
@@ -109,6 +143,7 @@ def download_file(url, filename):
     new_filename = f"{filename.split('.')[0]}_{current_version}.exe"
     with open(new_filename, "wb") as f:
         f.write(response.content)
+    start_new_version()
 
 def start_new_version():
     program_path = os.getcwd()
@@ -186,7 +221,7 @@ read_settings()
 
 
 def switch_language():
-    global select_dir_button_enc_lan, path_entry_enc_lan, pin_entry_enc_lan, encryption_button_lan, check_box_lan, check_box_log_lan, select_dir_button_dec_lan, new_update_label_lan, button_update_lan, button_close_lan, updating_label_lan, changelog_lan, version_to_version_lan, version_label_lan, button_start_after_update_lan, check_box_autoupdate_lan, path_entry_dec_lan, pin_entry_dec_lan, decryption_button_lan, seg_button_lan_1, seg_button_lan_2, seg_button_lan_3, save_settings_lan, save_key_button_lan, upload_from_file_entry_enc_lan, text_enc
+    global select_dir_button_enc_lan, path_entry_enc_lan, pin_entry_enc_lan, encryption_button_lan, check_box_lan, check_box_log_lan, select_dir_button_dec_lan, new_update_label_lan, button_update_lan, button_close_lan, updating_label_lan, changelog_lan, version_to_version_lan, version_label_lan, new_update_label_critical_lan, check_box_autoupdate_lan, path_entry_dec_lan, pin_entry_dec_lan, decryption_button_lan, seg_button_lan_1, seg_button_lan_2, seg_button_lan_3, save_settings_lan, save_key_button_lan, upload_from_file_entry_enc_lan, text_enc
     if Language == 'English':
         select_dir_button_enc_lan = 'Select Directory'
         path_entry_enc_lan = 'Path to Directory'
@@ -202,7 +237,7 @@ def switch_language():
         changelog_lan = 'Changelog:'
         version_to_version_lan = f'Current version: {version}\nNew version: '
         version_label_lan = f'Version {version}'
-        button_start_after_update_lan = 'Launch'
+        new_update_label_critical_lan = 'A critical update is available! \n It will be downloaded forcibly.'
         check_box_autoupdate_lan = 'Auto Update'
         path_entry_dec_lan = 'Path to Directory'
         pin_entry_dec_lan = 'Enter the decryption key'
@@ -228,7 +263,7 @@ def switch_language():
         changelog_lan = 'Журнал изменений:'
         version_to_version_lan = f'Текущая версия: {version}\nНовая версия: '
         version_label_lan = f'Версия {version}'
-        button_start_after_update_lan = 'Запустить'
+        new_update_label_critical_lan = f'Доступно критическое обновление! \n Оно будет загружено принудительно.'
         check_box_autoupdate_lan = 'Автообновление'
         path_entry_dec_lan = 'Путь до директории'
         pin_entry_dec_lan = 'Введите ключ дешифрования'
