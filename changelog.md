@@ -1,1 +1,2 @@
-Bug fix
+Added critical updates
+Changed changelog display
