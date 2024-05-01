@@ -1,12 +1,15 @@
 import io
 import warnings
+import os
 from os import path, remove, urandom
-
+import hashlib
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import hashes, hmac
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
+from cryptography.fernet import Fernet
+import base64
 
-version = "1.2.4"
+version = "1.3.0"
 
 bufferSizeDef = 64 * 1024
 
@@ -162,7 +165,7 @@ def decryptStream(fIn, fOut, passw, bufferSize=bufferSizeDef, inputLength=None):
 
     fdata = fIn.read(3)
     if fdata != b"AES":
-        raise ValueError("File is corrupted or not an AES Crypt (or pyAesCrypt) file.")
+        raise ValueError("File is corrupted or not an AES Crypt (or OFE lib) file.")
 
     fdata = fIn.read(1)
     if len(fdata) != 1:
@@ -170,7 +173,7 @@ def decryptStream(fIn, fOut, passw, bufferSize=bufferSizeDef, inputLength=None):
 
     if fdata != b"\x02":
         raise ValueError(
-            "pyAesCrypt is only compatible with version "
+            "OFE lib is only compatible with version "
             "2 of the AES Crypt file format."
         )
 
@@ -263,3 +266,31 @@ def getBufferableFileobj(fileobj):
         if getattr(fileobj, attr, noattr) == noattr:
             return BufferableFileobj(fileobj)
     return fileobj
+
+def format_key(key):
+    if len(key) >= 32:
+        return key[:32]
+    else:
+        return key.ljust(32, '0')
+
+def encrypt_message(key, message):
+    key = format_key(key)
+    key_bytes = key.encode()
+    cipher_suite = Fernet(base64.urlsafe_b64encode(key_bytes))
+    encrypted_message = cipher_suite.encrypt(message.encode())
+    hashed_filename = hashlib.sha256(message.encode()).hexdigest()[:8]
+    return hashed_filename + encrypted_message.decode()
+
+def decrypt_message(key, encrypted_message):
+    key = format_key(key)
+    key_bytes = key.encode()
+    cipher_suite = Fernet(base64.urlsafe_b64encode(key_bytes))
+    hashed_filename = encrypted_message[:8]
+    encrypted_filename = encrypted_message[8:]
+    decrypted_filename = cipher_suite.decrypt(encrypted_filename.encode()).decode()
+    if hashlib.sha256(decrypted_filename.encode()).hexdigest()[:8] != hashed_filename:
+        raise ValueError("Несоответствие хэша при дешифровании файла")
+    return decrypted_filename
+
+def get_filename(file_path):
+    return os.path.basename(file_path)
