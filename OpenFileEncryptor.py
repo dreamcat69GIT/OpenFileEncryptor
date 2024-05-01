@@ -11,14 +11,16 @@ import os
 import requests
 
 
+executable_path = os.path.dirname(os.path.abspath(__file__))
+image_exit_path = os.path.join(executable_path, 'Assets', 'Exit.png')
+theme_path = os.path.join(executable_path, 'Assets', 'stock_theme.json')
+icon_path = os.path.join(executable_path, 'Assets', 'Icon.ico')
+customtkinter.set_default_color_theme(f'{theme_path}')
 
-assets_path = os.path.join(sys._MEIPASS, 'Assets') if getattr(sys, 'frozen', False) else 'Assets'
-customtkinter.set_default_color_theme(f'{assets_path}/stock_theme.json')
 
 
 
-
-icon_image = CTkImage(Image.open(f'{assets_path}/Exit.png'), size=(30, 30))
+icon_image = CTkImage(Image.open(f'{image_exit_path}'), size=(30, 30))
 
 version = '1.3.0'
 
@@ -102,14 +104,14 @@ def read_settings():
         CustomThemePath = config.get('Settings', 'CustomThemePath')
         autoupdate = config.get('Settings', 'autoupdate')
         if CustomThemeName == 'Standard theme' or CustomThemeName == 'Стандартная тема':
-            customtkinter.set_default_color_theme(f'{assets_path}/stock_theme.json')
+            customtkinter.set_default_color_theme(f'{theme_path}')
         else:
             try:
                 customtkinter.set_default_color_theme(f'{CustomThemePath}')
             except:
                 create_new_settings_file()
                 error_read()
-                customtkinter.set_default_color_theme(f'{assets_path}/stock_theme.json')
+                customtkinter.set_default_color_theme(f'{theme_path}')
         if Language == 'English' or Language == 'Русский':
             pass
         else:
@@ -488,7 +490,7 @@ def main_gui():
     global app, console_enc
     app = customtkinter.CTk()
     app.title('OpenFileEncryptor')
-    app.iconbitmap(f'{assets_path}/Icon.ico')
+    app.iconbitmap(f'{icon_path}')
     app.geometry("400x500")
     app.resizable(width=False, height=False)
     def check_box_disable():
@@ -511,7 +513,7 @@ def main_gui():
                 if current_version > version:
                     updater_app = customtkinter.CTkToplevel(app)
                     updater_app.title('OpenFileEncryptor – Updater')
-                    updater_app.iconbitmap(f'{assets_path}/Icon.ico')
+                    updater_app.iconbitmap(f'{icon_path}')
                     updater_app.geometry("400x200")
                     updater_app.resizable(width=False, height=False)
                     new_update_label = customtkinter.CTkLabel(updater_app, text=f'{new_update_label_lan}', fg_color="transparent")
@@ -537,7 +539,7 @@ def main_gui():
                 if current_version > version:
                     updater_app = customtkinter.CTkToplevel(app)
                     updater_app.title('OpenFileEncryptor – Updater')
-                    updater_app.iconbitmap(f'{assets_path}/Icon.ico')
+                    updater_app.iconbitmap(f'{icon_path}')
                     updater_app.geometry("400x200")
                     updater_app.resizable(width=False, height=False)
                     new_update_label = customtkinter.CTkLabel(updater_app, text=f'{new_update_label_critical_lan}', fg_color="transparent")
@@ -560,7 +562,7 @@ def main_gui():
                 if current_version > version:
                     updater_app = customtkinter.CTkToplevel(app)
                     updater_app.title('OpenFileEncryptor – Updater')
-                    updater_app.iconbitmap(f'{assets_path}/Icon.ico')
+                    updater_app.iconbitmap(f'{icon_path}')
                     updater_app.geometry("400x200")
                     updater_app.resizable(width=False, height=False)
                     new_update_label = customtkinter.CTkLabel(updater_app, text=f'{new_update_label_critical_lan}', fg_color="transparent")
