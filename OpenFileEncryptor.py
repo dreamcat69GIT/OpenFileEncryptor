@@ -1,7 +1,7 @@
 import customtkinter
 from customtkinter import *
 from PIL import Image
-from Assets import ofe_lib as pyAesCrypt
+from Assets import ofe_lib as ofelib
 import random
 import string
 from datetime import datetime
@@ -11,21 +11,16 @@ import os
 import requests
 
 
+
 assets_path = os.path.join(sys._MEIPASS, 'Assets') if getattr(sys, 'frozen', False) else 'Assets'
 customtkinter.set_default_color_theme(f'{assets_path}/stock_theme.json')
 
-
-app = customtkinter.CTk()
-app.title('OpenFileEncryptor')
-app.iconbitmap(f'{assets_path}/Icon.ico')
-app.geometry("400x500")
-app.resizable(width=False, height=False)
 
 
 
 icon_image = CTkImage(Image.open(f'{assets_path}/Exit.png'), size=(30, 30))
 
-version = '1.2.4'
+version = '1.3.0'
 
 def delete_old_versions():
     global program_path, old_filename
@@ -38,88 +33,6 @@ def delete_old_versions():
 
 delete_old_versions()
 
-def check_for_updates(version):
-    try:
-        global download_url, updater_app, current_version, start_update_gui, button_update, update_gui
-        json_url = 'https://raw.githubusercontent.com/dreamcat69GIT/OpenFileEncryptor/main/update.json'
-        response = requests.get(json_url)
-        data = response.json()
-        current_version = data["current_version"]
-        update_type = data["update_type"]
-        if update_type == 'stable':
-            if current_version > version:
-                updater_app = customtkinter.CTkToplevel(app)
-                updater_app.title('OpenFileEncryptor – Updater')
-                updater_app.iconbitmap(f'{assets_path}/Icon.ico')
-                updater_app.geometry("400x200")
-                updater_app.resizable(width=False, height=False)
-                new_update_label = customtkinter.CTkLabel(updater_app, text=f'{new_update_label_lan}', fg_color="transparent")
-                new_update_label.pack()
-                download_url = data["download_url"]
-                changelog_md = data['note']
-                response = requests.get(changelog_md)
-                if response.status_code == 200:
-                    changelog_content = response.text
-                    changelog_text = customtkinter.CTkTextbox(updater_app, state = DISABLED,width=400, height=70)
-                    changelog_text.place(x=0,y=30)
-                    changelog_text.configure(state = NORMAL)
-                    changelog_text.insert(0.0, changelog_content)
-                    changelog_text.insert(0.0, changelog_lan + f'\n')
-                    changelog_text.configure(state=DISABLED)
-                version_to_version = customtkinter.CTkLabel(updater_app, text=f'{version_to_version_lan}' + f'{current_version}')
-                version_to_version.place(x=10, y=110)
-                button_update = customtkinter.CTkButton(updater_app, text=f'{button_update_lan}', height=35, width=140, command=pre_update)
-                button_update.place(x=250, y=150)
-                button_close = customtkinter.CTkButton(updater_app, text=f'{button_close_lan}', height=35, width=140, command=close_window)
-                button_close.place(x=10, y=150)
-        elif update_type == 'critical':
-            if current_version > version:
-                updater_app = customtkinter.CTkToplevel(app)
-                updater_app.title('OpenFileEncryptor – Updater')
-                updater_app.iconbitmap(f'{assets_path}/Icon.ico')
-                updater_app.geometry("400x200")
-                updater_app.resizable(width=False, height=False)
-                new_update_label = customtkinter.CTkLabel(updater_app, text=f'{new_update_label_critical_lan}', fg_color="transparent")
-                new_update_label.pack()
-                download_url = data["download_url"]
-                changelog_md = data['note']
-                response = requests.get(changelog_md)
-                if response.status_code == 200:
-                    changelog_content = response.text
-                    changelog_text = customtkinter.CTkTextbox(updater_app, state = DISABLED,width=400, height=70)
-                    changelog_text.place(x=0,y=30)
-                    changelog_text.configure(state = NORMAL)
-                    changelog_text.insert(0.0, changelog_content)
-                    changelog_text.insert(0.0, changelog_lan + f'\n')
-                    changelog_text.configure(state=DISABLED)
-                version_to_version = customtkinter.CTkLabel(updater_app, text=f'{version_to_version_lan}' + f'{current_version}')
-                version_to_version.place(x=130, y=110)
-                pre_update()
-        else:
-            if current_version > version:
-                updater_app = customtkinter.CTkToplevel(app)
-                updater_app.title('OpenFileEncryptor – Updater')
-                updater_app.iconbitmap(f'{assets_path}/Icon.ico')
-                updater_app.geometry("400x200")
-                updater_app.resizable(width=False, height=False)
-                new_update_label = customtkinter.CTkLabel(updater_app, text=f'{new_update_label_critical_lan}', fg_color="transparent")
-                new_update_label.pack()
-                download_url = data["download_url"]
-                changelog_md = data['note']
-                response = requests.get(changelog_md)
-                if response.status_code == 200:
-                    changelog_content = response.text
-                    changelog_text = customtkinter.CTkTextbox(updater_app, state = DISABLED,width=400, height=70)
-                    changelog_text.place(x=0,y=30)
-                    changelog_text.configure(state = NORMAL)
-                    changelog_text.insert(0.0, changelog_content)
-                    changelog_text.insert(0.0, changelog_lan + f'\n')
-                    changelog_text.configure(state=DISABLED)
-                version_to_version = customtkinter.CTkLabel(updater_app, text=f'{version_to_version_lan}' + f'{current_version}')
-                version_to_version.place(x=130, y=110)
-                pre_update()
-    except:
-        pass
 
 def pre_update():
     thread = threading.Thread(target=update)
@@ -358,8 +271,10 @@ def write_log(text):
     file.close
 
 def restart_program():
-    python = sys.executable
-    os.execl(python, python, *sys.argv)
+    app.destroy()
+    read_settings()
+    switch_language()
+    main_gui()
 
 def switch_language_enc(file):
     global text_enc
@@ -412,13 +327,17 @@ def settings():
 
 def decryption(file, password):
     buffer_size = 512 * 1024
-    decrypted_file = str(os.path.splitext(file)[0])
-    switch_language_dec(decrypted_file)
+    encrypted_filename = os.path.basename(os.path.splitext(file)[0])
+    decrypted_filename = ofelib.decrypt_message(password, encrypted_filename)
+    
+    decrypted_file = os.path.join(os.path.dirname(file), decrypted_filename)
+    
+    switch_language_dec(decrypted_filename)
     index = '0.0'
     text = text_dec
     text_error = text_dec_error
     try:
-        pyAesCrypt.decryptFile(str(file), decrypted_file, password, buffer_size)
+        ofelib.decryptFile(file, decrypted_file, password, buffer_size)
         console_write(index, text)
         if Logs == 'on':
             write_log(text)
@@ -429,6 +348,8 @@ def decryption(file, password):
     if os.path.exists(decrypted_file):
         os.remove(file)
         return True
+
+    
     
 
 def walking_by_dirs(dir, password):
@@ -482,13 +403,15 @@ def console_write(index, text):
     textbox.configure(state=DISABLED)
 
 def encryption(file, password):
+    encrypted_filename = ofelib.encrypt_message(password, os.path.basename(ofelib.get_filename(file)))
     switch_language_enc(file)
     index = '0.0'
     text = text_enc
     buffer_size = 512 * 1024
-    pyAesCrypt.encryptFile(
+    encrypted_file_path = os.path.join(os.path.dirname(file), encrypted_filename + ".crp")
+    ofelib.encryptFile(
         str(file),
-        str(file) + ".crp",
+        encrypted_file_path,
         password,
         buffer_size
     )
@@ -496,7 +419,6 @@ def encryption(file, password):
     if Logs == 'on':
         write_log(text)
     os.remove(file)
-
 
 def save_key_to_file():
     filename = filedialog.asksaveasfilename()
@@ -562,135 +484,228 @@ def start_decryption():
     password = str(pin_entry_dec.get())
     threading.Thread(target=walking_by_dirs, args=(f, password)).start()
 
-def check_box_disable():
-    if check_box_var.get() == 'off':
-        pin_entry_enc.configure(state='normal')
-        upload_from_file_enc.configure(state='normal')
-    elif check_box_var.get() == 'on':
-        pin_entry_enc.configure(state='disabled')
-        upload_from_file_enc.configure(state='disabled')
+def main_gui():
+    global app, console_enc
+    app = customtkinter.CTk()
+    app.title('OpenFileEncryptor')
+    app.iconbitmap(f'{assets_path}/Icon.ico')
+    app.geometry("400x500")
+    app.resizable(width=False, height=False)
+    def check_box_disable():
+        if check_box_var.get() == 'off':
+            pin_entry_enc.configure(state='normal')
+            upload_from_file_enc.configure(state='normal')
+        elif check_box_var.get() == 'on':
+            pin_entry_enc.configure(state='disabled')
+            upload_from_file_enc.configure(state='disabled')
+            
+    def check_for_updates(version):
+        try:
+            global download_url, updater_app, current_version, start_update_gui, button_update, update_gui
+            json_url = 'https://raw.githubusercontent.com/dreamcat69GIT/OpenFileEncryptor/main/update.json'
+            response = requests.get(json_url)
+            data = response.json()
+            current_version = data["current_version"]
+            update_type = data["update_type"]
+            if update_type == 'stable':
+                if current_version > version:
+                    updater_app = customtkinter.CTkToplevel(app)
+                    updater_app.title('OpenFileEncryptor – Updater')
+                    updater_app.iconbitmap(f'{assets_path}/Icon.ico')
+                    updater_app.geometry("400x200")
+                    updater_app.resizable(width=False, height=False)
+                    new_update_label = customtkinter.CTkLabel(updater_app, text=f'{new_update_label_lan}', fg_color="transparent")
+                    new_update_label.pack()
+                    download_url = data["download_url"]
+                    changelog_md = data['note']
+                    response = requests.get(changelog_md)
+                    if response.status_code == 200:
+                        changelog_content = response.text
+                        changelog_text = customtkinter.CTkTextbox(updater_app, state = DISABLED,width=400, height=70)
+                        changelog_text.place(x=0,y=30)
+                        changelog_text.configure(state = NORMAL)
+                        changelog_text.insert(0.0, changelog_content)
+                        changelog_text.insert(0.0, changelog_lan + f'\n')
+                        changelog_text.configure(state=DISABLED)
+                    version_to_version = customtkinter.CTkLabel(updater_app, text=f'{version_to_version_lan}' + f'{current_version}')
+                    version_to_version.place(x=10, y=110)
+                    button_update = customtkinter.CTkButton(updater_app, text=f'{button_update_lan}', height=35, width=140, command=pre_update)
+                    button_update.place(x=250, y=150)
+                    button_close = customtkinter.CTkButton(updater_app, text=f'{button_close_lan}', height=35, width=140, command=close_window)
+                    button_close.place(x=10, y=150)
+            elif update_type == 'critical':
+                if current_version > version:
+                    updater_app = customtkinter.CTkToplevel(app)
+                    updater_app.title('OpenFileEncryptor – Updater')
+                    updater_app.iconbitmap(f'{assets_path}/Icon.ico')
+                    updater_app.geometry("400x200")
+                    updater_app.resizable(width=False, height=False)
+                    new_update_label = customtkinter.CTkLabel(updater_app, text=f'{new_update_label_critical_lan}', fg_color="transparent")
+                    new_update_label.pack()
+                    download_url = data["download_url"]
+                    changelog_md = data['note']
+                    response = requests.get(changelog_md)
+                    if response.status_code == 200:
+                        changelog_content = response.text
+                        changelog_text = customtkinter.CTkTextbox(updater_app, state = DISABLED,width=400, height=70)
+                        changelog_text.place(x=0,y=30)
+                        changelog_text.configure(state = NORMAL)
+                        changelog_text.insert(0.0, changelog_content)
+                        changelog_text.insert(0.0, changelog_lan + f'\n')
+                        changelog_text.configure(state=DISABLED)
+                    version_to_version = customtkinter.CTkLabel(updater_app, text=f'{version_to_version_lan}' + f'{current_version}')
+                    version_to_version.place(x=130, y=110)
+                    pre_update()
+            else:
+                if current_version > version:
+                    updater_app = customtkinter.CTkToplevel(app)
+                    updater_app.title('OpenFileEncryptor – Updater')
+                    updater_app.iconbitmap(f'{assets_path}/Icon.ico')
+                    updater_app.geometry("400x200")
+                    updater_app.resizable(width=False, height=False)
+                    new_update_label = customtkinter.CTkLabel(updater_app, text=f'{new_update_label_critical_lan}', fg_color="transparent")
+                    new_update_label.pack()
+                    download_url = data["download_url"]
+                    changelog_md = data['note']
+                    response = requests.get(changelog_md)
+                    if response.status_code == 200:
+                        changelog_content = response.text
+                        changelog_text = customtkinter.CTkTextbox(updater_app, state = DISABLED,width=400, height=70)
+                        changelog_text.place(x=0,y=30)
+                        changelog_text.configure(state = NORMAL)
+                        changelog_text.insert(0.0, changelog_content)
+                        changelog_text.insert(0.0, changelog_lan + f'\n')
+                        changelog_text.configure(state=DISABLED)
+                    version_to_version = customtkinter.CTkLabel(updater_app, text=f'{version_to_version_lan}' + f'{current_version}')
+                    version_to_version.place(x=130, y=110)
+                    pre_update()
+        except:
+            pass
 
 
-def enc_window():
-    global select_dir_button_enc, path_entry_enc, encryption_button, pin_entry_enc, check_box, check_box_var, upload_from_file_enc, path_upload_entry_enc, upload_from_file_enc
-    select_dir_button_enc = customtkinter.CTkButton(app, text=f'{select_dir_button_enc_lan}', height=35, width=130,command=select_dir_enc)
-    select_dir_button_enc.place(x = 10, y=100)
-    path_entry_enc = customtkinter.CTkEntry(app, placeholder_text=f'{path_entry_enc_lan}', width=200, height=35)
-    path_entry_enc.place(x = 170, y=100)
-    pin_entry_enc = customtkinter.CTkEntry(app, placeholder_text=f'{pin_entry_enc_lan}', width=200, height=35)
-    pin_entry_enc.place(x = 170, y=170)
-    encryption_button = customtkinter.CTkButton(app, text=f'{encryption_button_lan}', height=35, width=130,command=start_encryption)
-    encryption_button.place(x = 10, y=230)
-    check_box_var = customtkinter.StringVar(value="off")
-    check_box = customtkinter.CTkCheckBox(app, text=f'{check_box_lan}', command=check_box_disable, variable=check_box_var, onvalue="on", offvalue="off")
-    check_box.place(x=10,y=60)
-    upload_from_file_enc = customtkinter.CTkButton(app, text=f'{upload_from_file_entry_enc_lan}', height=35, width=130,command=select_key_enc)
-    upload_from_file_enc.place(x = 10, y=170)
+    def enc_window():
+        global select_dir_button_enc, path_entry_enc, encryption_button, pin_entry_enc, check_box, check_box_var, upload_from_file_enc, path_upload_entry_enc, upload_from_file_enc
+        select_dir_button_enc = customtkinter.CTkButton(app, text=f'{select_dir_button_enc_lan}', height=35, width=130,command=select_dir_enc)
+        select_dir_button_enc.place(x = 10, y=100)
+        path_entry_enc = customtkinter.CTkEntry(app, placeholder_text=f'{path_entry_enc_lan}', width=200, height=35)
+        path_entry_enc.place(x = 170, y=100)
+        pin_entry_enc = customtkinter.CTkEntry(app, placeholder_text=f'{pin_entry_enc_lan}', width=200, height=35)
+        pin_entry_enc.place(x = 170, y=170)
+        encryption_button = customtkinter.CTkButton(app, text=f'{encryption_button_lan}', height=35, width=130,command=start_encryption)
+        encryption_button.place(x = 10, y=230)
+        check_box_var = customtkinter.StringVar(value="off")
+        check_box = customtkinter.CTkCheckBox(app, text=f'{check_box_lan}', command=check_box_disable, variable=check_box_var, onvalue="on", offvalue="off")
+        check_box.place(x=10,y=60)
+        upload_from_file_enc = customtkinter.CTkButton(app, text=f'{upload_from_file_entry_enc_lan}', height=35, width=130,command=select_key_enc)
+        upload_from_file_enc.place(x = 10, y=170)
 
-def dec_window():
-    global select_dir_button_dec, path_entry_dec, decryption_button, pin_entry_dec, upload_from_file_dec
-    select_dir_button_dec = customtkinter.CTkButton(app, text=f'{select_dir_button_dec_lan}', height=35, width=130,command=select_dir_dec)
-    select_dir_button_dec.place(x = 10, y=100)
-    path_entry_dec = customtkinter.CTkEntry(app, placeholder_text=f'{path_entry_dec_lan}', width=200, height=35)
-    path_entry_dec.place(x = 170, y=100)
-    pin_entry_dec = customtkinter.CTkEntry(app, placeholder_text=f'{pin_entry_dec_lan}', width=200, height=35)
-    pin_entry_dec.place(x = 170, y=170)
-    decryption_button = customtkinter.CTkButton(app, text=f'{decryption_button_lan}', height=35, width=130,command=start_decryption)
-    decryption_button.place(x = 10, y=230)
-    upload_from_file_dec = customtkinter.CTkButton(app, text=f'{upload_from_file_entry_enc_lan}', height=35, width=130,command=select_key_dec)
-    upload_from_file_dec.place(x = 10, y=170)
+    def dec_window():
+        global select_dir_button_dec, path_entry_dec, decryption_button, pin_entry_dec, upload_from_file_dec
+        select_dir_button_dec = customtkinter.CTkButton(app, text=f'{select_dir_button_dec_lan}', height=35, width=130,command=select_dir_dec)
+        select_dir_button_dec.place(x = 10, y=100)
+        path_entry_dec = customtkinter.CTkEntry(app, placeholder_text=f'{path_entry_dec_lan}', width=200, height=35)
+        path_entry_dec.place(x = 170, y=100)
+        pin_entry_dec = customtkinter.CTkEntry(app, placeholder_text=f'{pin_entry_dec_lan}', width=200, height=35)
+        pin_entry_dec.place(x = 170, y=170)
+        decryption_button = customtkinter.CTkButton(app, text=f'{decryption_button_lan}', height=35, width=130,command=start_decryption)
+        decryption_button.place(x = 10, y=230)
+        upload_from_file_dec = customtkinter.CTkButton(app, text=f'{upload_from_file_entry_enc_lan}', height=35, width=130,command=select_key_dec)
+        upload_from_file_dec.place(x = 10, y=170)
 
-def console_enc():
-    global textbox, exit_button
-    try:
-        exit_console()
-    except:
-        pass
-    textbox = customtkinter.CTkTextbox(app,state = DISABLED,width=400, height=170)
-    textbox.place(x=0,y=330)
-    exit_button = customtkinter.CTkButton(app, text = '', width=5, height=5, image=icon_image, fg_color = 'transparent',hover_color = '#f44336', command=exit_console)
-    exit_button.place(x= 360, y= 290)
+    def console_enc():
+        global textbox, exit_button
+        try:
+            exit_console()
+        except:
+            pass
+        textbox = customtkinter.CTkTextbox(app,state = DISABLED,width=400, height=170)
+        textbox.place(x=0,y=330)
+        exit_button = customtkinter.CTkButton(app, text = '', width=5, height=5, image=icon_image, fg_color = 'transparent',hover_color = '#f44336', command=exit_console)
+        exit_button.place(x= 360, y= 290)
 
 
-def exit_console():
-    textbox.destroy()
-    exit_button.destroy()
+    def exit_console():
+        textbox.destroy()
+        exit_button.destroy()
 
-def rem_enc():
-    select_dir_button_enc.destroy()
-    path_entry_enc.destroy()
-    pin_entry_enc.destroy()
-    encryption_button.destroy()
-    check_box.destroy()
-    upload_from_file_enc.destroy()
+    def rem_enc():
+        select_dir_button_enc.destroy()
+        path_entry_enc.destroy()
+        pin_entry_enc.destroy()
+        encryption_button.destroy()
+        check_box.destroy()
+        upload_from_file_enc.destroy()
 
-def rem_dec():
-    select_dir_button_dec.destroy()
-    path_entry_dec.destroy()
-    pin_entry_dec.destroy()
-    decryption_button.destroy()
-    upload_from_file_dec.destroy()
+    def rem_dec():
+        select_dir_button_dec.destroy()
+        path_entry_dec.destroy()
+        pin_entry_dec.destroy()
+        decryption_button.destroy()
+        upload_from_file_dec.destroy()
 
-def rem_settings():
-    save.destroy()
-    language_menu.destroy()
-    check_box_log.destroy()
-    check_box_autoupdate.destroy()
-    thememenu.destroy()
-    version_label.destroy()
-
-last_dir = 'Encryption'
-def folders_values(value):
+    def rem_settings():
+        save.destroy()
+        language_menu.destroy()
+        check_box_log.destroy()
+        check_box_autoupdate.destroy()
+        thememenu.destroy()
+        version_label.destroy()
+    
     global last_dir
-    if value == f'{seg_button_lan_1}':
-        if last_dir == 'Decryption':
-            rem_dec()
-            last_dir = 'Encryption'
-            enc_window()
-        elif last_dir == 'Settings':
-            rem_settings()
-            last_dir = 'Encryption'
-            enc_window()
-    elif value == f'{seg_button_lan_2}':
-        if last_dir == 'Encryption':
-            rem_enc()
-            last_dir = 'Decryption'
-            try:
-                rem_save_key_button_manual()
-            except:
-                pass
-            try:
-                rem_save_key_button()
-            except:
-                pass
-            dec_window()
-        elif last_dir == 'Settings':
-            rem_settings()
-            last_dir = 'Decryption'
-            dec_window()
-    elif value == f'{seg_button_lan_3}':
-        if last_dir == 'Encryption':
-            rem_enc()
-            try:
-                rem_save_key_button_manual()
-            except:
-                pass
-            try:
-                rem_save_key_button()
-            except:
-                pass
-            last_dir = 'Settings'
-            settings()
-        elif last_dir == 'Decryption':
-            rem_dec()
-            last_dir = 'Settings'
-            settings()
+    last_dir = 'Encryption'
+    def folders_values(value):
+        global last_dir
+        if value == f'{seg_button_lan_1}':
+            if last_dir == 'Decryption':
+                rem_dec()
+                last_dir = 'Encryption'
+                enc_window()
+            elif last_dir == 'Settings':
+                rem_settings()
+                last_dir = 'Encryption'
+                enc_window()
+        elif value == f'{seg_button_lan_2}':
+            if last_dir == 'Encryption':
+                rem_enc()
+                last_dir = 'Decryption'
+                try:
+                    rem_save_key_button_manual()
+                except:
+                    pass
+                try:
+                    rem_save_key_button()
+                except:
+                    pass
+                dec_window()
+            elif last_dir == 'Settings':
+                rem_settings()
+                last_dir = 'Decryption'
+                dec_window()
+        elif value == f'{seg_button_lan_3}':
+            if last_dir == 'Encryption':
+                rem_enc()
+                try:
+                    rem_save_key_button_manual()
+                except:
+                    pass
+                try:
+                    rem_save_key_button()
+                except:
+                    pass
+                last_dir = 'Settings'
+                settings()
+            elif last_dir == 'Decryption':
+                rem_dec()
+                last_dir = 'Settings'
+                settings()
 
-folders = customtkinter.CTkSegmentedButton(app, values=[f'{seg_button_lan_1}', f'{seg_button_lan_2}',f'{seg_button_lan_3}'],height=40, command=folders_values)
-folders.pack()
-folders.set(f'{seg_button_lan_1}')
+    folders = customtkinter.CTkSegmentedButton(app, values=[f'{seg_button_lan_1}', f'{seg_button_lan_2}',f'{seg_button_lan_3}'],height=40, command=folders_values)
+    folders.pack()
+    folders.set(f'{seg_button_lan_1}')
+    enc_window()
+    if autoupdate == 'on':
+        check_for_updates(version)
+    app.mainloop()
 
-enc_window()
-if autoupdate == 'on':
-    check_for_updates(version)
-app.mainloop()
+
+main_gui()
