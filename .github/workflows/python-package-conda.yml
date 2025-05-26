@@ -1,0 +1,32 @@
+name: Build OFE (Linux)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build-linux:
+    runs-on: ubuntu-latest
+    strategy:
+      max-parallel: 5
+    steps:
+    - uses: actions/checkout@v4
+    - name: Set up Python 3.10
+      uses: actions/setup-python@v3
+      with:
+        python-version: '3.10'
+    - name: Install system dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y python3-tk
+    - name: Install dependencies
+      run: |
+       pip install --upgrade pip
+       pip install pyAesCrypt customtkinter Pillow requests nuitka
+    - name: Build with Nuitka
+      run: |
+        python -m nuitka --onefile --include-data-dir=./Assets/=Assets --enable-plugin=tk-inter --windows-icon-from-ico=Icon.ico OpenFileEncryptor.py
+    - name: Upload built binary
+      uses: actions/upload-artifact@v4
+      with:
+        name: OpenFileEncryptor-Linux
+        path: build/OpenFileEncryptor.bin
