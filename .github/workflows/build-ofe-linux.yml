@@ -22,9 +22,11 @@ jobs:
       run: |
        pip install --upgrade pip
        pip install pyAesCrypt customtkinter Pillow requests nuitka
+    - name: List project directory
+      run: ls -R .
     - name: Build with Nuitka
       run: |
-        python -m nuitka --onefile --include-data-dir=./Assets/=Assets --enable-plugin=tk-inter OpenFileEncryptor.py
+        python -m nuitka --onefile ---include-data-dir=Assets=Assets --enable-plugin=tk-inter OpenFileEncryptor.py
     - name: Upload built binary
       uses: actions/upload-artifact@v4
       with:
