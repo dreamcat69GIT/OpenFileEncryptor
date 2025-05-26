@@ -1,5 +1,4 @@
 name: Build OFE (Linux)
-
 on:
   workflow_dispatch:
 
