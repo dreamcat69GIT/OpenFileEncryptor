@@ -19,7 +19,7 @@ jobs:
        pip install pyAesCrypt customtkinter Pillow requests nuitka
     - name: Build with Nuitka
       run: |
-        python -m nuitka --onefile --windows-disable-console --include-data-dirEnc/Assets/=Assets --windows-uac-admin --enable-plugin=tk-inter --windows-icon-from-ico=Etc/Assets/Icon.ico OpenFileEncryptor.py
+        python -m nuitka --onefile --windows-disable-console --include-data-dir=Enc/Assets/=Assets --windows-uac-admin --enable-plugin=tk-inter --windows-icon-from-ico=Enc/Assets/Icon.ico OpenFileEncryptor.py
     - name: Upload built binary
       uses: actions/upload-artifact@v4
       with:
