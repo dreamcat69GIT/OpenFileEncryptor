@@ -1,7 +1,10 @@
 import customtkinter
 from customtkinter import *
 from PIL import Image
-from Assets import ofe_lib as ofelib
+try:
+    from Enc.Assets import ofe_lib as ofelib
+except:
+    from Assets import ofe_lib as ofelib        
 import random
 import string
 from datetime import datetime
@@ -10,24 +13,33 @@ import configparser
 import os
 import requests
 
-
-executable_path = os.path.dirname(os.path.abspath(__file__))
-image_exit_path = os.path.join(executable_path, 'Assets', 'Exit.png')
-theme_path = os.path.join(executable_path, 'Assets', 'stock_theme.json')
-icon_path = os.path.join(executable_path, 'Assets', 'Icon.ico')
-customtkinter.set_default_color_theme(f'{theme_path}')
-
-
-
+try:
+    executable_path = os.path.dirname(os.path.abspath(__file__))
+    image_exit_path = os.path.join(executable_path, 'Enc' , 'Assets', 'Exit.png')
+    theme_path = os.path.join(executable_path, 'Enc' ,  'Assets', 'stock_theme.json')
+    icon_path = os.path.join(executable_path, 'Enc' , 'Assets', 'Icon.ico')
+    customtkinter.set_default_color_theme(f'{theme_path}')
+except:
+    executable_path = os.path.dirname(os.path.abspath(__file__))
+    image_exit_path = os.path.join(executable_path, 'Assets', 'Exit.png')
+    theme_path = os.path.join(executable_path, 'Assets', 'stock_theme.json')
+    icon_path = os.path.join(executable_path, 'Assets', 'Icon.ico')
+    customtkinter.set_default_color_theme(f'{theme_path}')
+        
+global encrypted_files_count
+encrypted_files_count = 0
 
 icon_image = CTkImage(Image.open(f'{image_exit_path}'), size=(30, 30))
 
-version = '1.3.0'
+version = '1.4.0'
 
 def delete_old_versions():
     global program_path, old_filename
     program_path = os.getcwd()
-    old_filename = "oldOFE.exe"
+    if os.name == "nt":
+        old_filename = "oldOFE.exe"
+    elif os.name == "posix":
+        old_filename = "oldOFE"
     try:
         os.remove(os.path.join(program_path, old_filename))
     except FileNotFoundError:
@@ -55,7 +67,10 @@ def update():
 def download_file(url, filename):
     global new_filename
     response = requests.get(url)
-    new_filename = f"{filename.split('.')[0]}_{current_version}.exe"
+    if os.name == "nt":
+        new_filename = f"{filename.split('.')[0]}_{current_version}.exe"
+    elif os.name == "posix":
+        new_filename = f"{filename.split('.')[0]}_{current_version}"    
     with open(new_filename, "wb") as f:
         f.write(response.content)
     start_new_version()
@@ -136,7 +151,7 @@ read_settings()
 
 
 def switch_language():
-    global select_dir_button_enc_lan, path_entry_enc_lan, pin_entry_enc_lan, encryption_button_lan, check_box_lan, check_box_log_lan, select_dir_button_dec_lan, new_update_label_lan, button_update_lan, button_close_lan, updating_label_lan, changelog_lan, version_to_version_lan, version_label_lan, new_update_label_critical_lan, check_box_autoupdate_lan, path_entry_dec_lan, pin_entry_dec_lan, decryption_button_lan, seg_button_lan_1, seg_button_lan_2, seg_button_lan_3, save_settings_lan, save_key_button_lan, upload_from_file_entry_enc_lan, text_enc
+    global select_dir_button_enc_lan, decriptedword, encryptionfail, decryptionfail, decryption_complete , encryption_complete, encriptedword, decryption_complete, path_entry_enc_lan, pin_entry_enc_lan, encryption_button_lan, check_box_lan, check_box_log_lan, select_dir_button_dec_lan, new_update_label_lan, button_update_lan, button_close_lan, updating_label_lan, changelog_lan, version_to_version_lan, version_label_lan, new_update_label_critical_lan, check_box_autoupdate_lan, path_entry_dec_lan, pin_entry_dec_lan, decryption_button_lan, seg_button_lan_1, seg_button_lan_2, seg_button_lan_3, save_settings_lan, save_key_button_lan, upload_from_file_entry_enc_lan, text_enc
     if Language == 'English':
         select_dir_button_enc_lan = 'Select Directory'
         path_entry_enc_lan = 'Path to Directory'
@@ -163,6 +178,13 @@ def switch_language():
         seg_button_lan_1 = 'Encryption'
         seg_button_lan_2 = 'Decryption'
         seg_button_lan_3 = 'Settings'
+        encryptionfail = 'Error while encrypting'
+        decryptionfail = 'Error while decrypting'
+        encryption_complete = 'Encryption complete'
+        decryption_complete = 'Decryption complete'
+        encriptedword = 'Encrypted'
+        decriptedword = 'Decrypted'
+        
     elif Language == 'Русский':
         select_dir_button_enc_lan = 'Выбор директории'
         path_entry_enc_lan = 'Путь до директории'
@@ -189,6 +211,12 @@ def switch_language():
         seg_button_lan_1 = 'Шифрование'
         seg_button_lan_2 = 'Дешифрование'
         seg_button_lan_3 = 'Настройки'
+        encryption_complete = 'Шифрование завершено'
+        decryption_complete = 'Дешифрование завершено'
+        encryptionfail = 'Ошибка шифрования'
+        decryptionfail = 'Ошибка дешифрования'
+        encriptedword = 'Зашифрован'
+        decriptedword = 'Расшифрован'
 switch_language()
 
 
@@ -331,61 +359,72 @@ def decryption(file, password):
     buffer_size = 512 * 1024
     encrypted_filename = os.path.basename(os.path.splitext(file)[0])
     decrypted_filename = ofelib.decrypt_message(password, encrypted_filename)
-    
     decrypted_file = os.path.join(os.path.dirname(file), decrypted_filename)
-    
+
     switch_language_dec(decrypted_filename)
     index = '0.0'
     text = text_dec
     text_error = text_dec_error
+
     try:
         ofelib.decryptFile(file, decrypted_file, password, buffer_size)
-        console_write(index, text)
         if Logs == 'on':
             write_log(text)
+        os.remove(file)
+        return True
     except ValueError as e:
         console_write(index, text_error)
         if Logs == 'on':
             write_log(text_error)
-    if os.path.exists(decrypted_file):
-        os.remove(file)
-        return True
+        return False
 
     
     
 
 def walking_by_dirs(dir, password):
+    global encrypted_files_count
     try:
         for name in os.listdir(dir):
             path = os.path.join(dir, name)
             if os.path.isfile(path):
                 try:
-                    decryption(path, password)
-    
+                    result = decryption(path, password)
+                    if result:
+                        encrypted_files_count += 1
+                        index = '0.0'
+                        console_write(index, f"[+] {decriptedword}: {path} ({encrypted_files_count}/{totalfiles})\n")
                 except Exception as ex:
-                    pass
-            
+                    index = '0.0'
+                    console_write(index, f"[!] {decryptionfail} {path}: {ex}\n")
             else:
                 walking_by_dirs(path, password)
-                
     except Exception as e:
-        pass
+        index = '0.0'
+        console_write(index, f"[!] Ошибка доступа к {dir}: {e}\n")
 
 
 
 def walking_by_dirs2(dir, password):
+    global encrypted_files_count
     try:
         for name in os.listdir(dir):
             path = os.path.join(dir, name)
             if os.path.isfile(path):
                 try:
                     encryption(path, password)
+                    encrypted_files_count += 1
+                    index = '0.0'
+                    console_write(index, f"[+] {encriptedword}: {path} ({encrypted_files_count}/{totalfiles})\n")
                 except Exception as ex:
-                    pass
+                    index = '0.0'
+                    console_write(index, f"[!] {encryptionfail} {path}: {ex}\n")
             else:
                 walking_by_dirs2(path, password)
     except Exception as e:
-        pass
+        index = '0.0'
+        console_write(index, f"[!] Ошибка доступа к {dir}: {e}\n")
+
+
 
 
 def generate_key():
@@ -400,9 +439,12 @@ def generate_key():
     return random_string
 
 def console_write(index, text):
-    textbox.configure(state = NORMAL)
+    global usedfiles
+    usedfiles += 1
+    textbox.configure(state=NORMAL)
     textbox.insert(index, text)
     textbox.configure(state=DISABLED)
+
 
 def encryption(file, password):
     encrypted_filename = ofelib.encrypt_message(password, os.path.basename(ofelib.get_filename(file)))
@@ -417,10 +459,10 @@ def encryption(file, password):
         password,
         buffer_size
     )
-    console_write(index, text)
     if Logs == 'on':
         write_log(text)
     os.remove(file)
+    
 
 def save_key_to_file():
     filename = filedialog.asksaveasfilename()
@@ -457,6 +499,11 @@ def save_key_button():
 
 
 def start_encryption():
+    f = path_entry_enc.get()
+    global totalfiles, encrypted_files_count, usedfiles
+    totalfiles = ofelib.count_files(f)
+    encrypted_files_count = 0
+    usedfiles = 0
     try:
         rem_save_key_button_manual()
     except:
@@ -468,12 +515,10 @@ def start_encryption():
     console_enc()
     global key
     if check_box_var.get() == 'off':
-        f = path_entry_enc.get()
         password = str(pin_entry_enc.get())
         threading.Thread(target=walking_by_dirs2, args=(f, password)).start()
         save_key_button_manual()
     elif check_box_var.get() == 'on':
-        f = path_entry_enc.get()
         key = generate_key()
         password = str(key)
         threading.Thread(target=walking_by_dirs2, args=(f, password)).start()
@@ -481,10 +526,15 @@ def start_encryption():
 
 
 def start_decryption():
-    console_enc()
+    global totalfiles, encrypted_files_count, usedfiles
     f = path_entry_dec.get()
+    totalfiles = ofelib.count_files(f)
+    encrypted_files_count = 0
+    usedfiles = 0
+    console_enc()
     password = str(pin_entry_dec.get())
     threading.Thread(target=walking_by_dirs, args=(f, password)).start()
+
 
 def main_gui():
     global app, console_enc
@@ -504,7 +554,10 @@ def main_gui():
     def check_for_updates(version):
         try:
             global download_url, updater_app, current_version, start_update_gui, button_update, update_gui
-            json_url = 'https://raw.githubusercontent.com/dreamcat69GIT/OpenFileEncryptor/main/update.json'
+            if os.name == "nt": 
+                json_url = 'https://raw.githubusercontent.com/dreamcat69GIT/OpenFileEncryptor/main/update.json'
+            elif os.name == "posix": 
+                json_url = 'https://raw.githubusercontent.com/dreamcat69GIT/OpenFileEncryptor/main/update_linux.json'
             response = requests.get(json_url)
             data = response.json()
             current_version = data["current_version"]

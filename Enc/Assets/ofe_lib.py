@@ -9,7 +9,7 @@ from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 from cryptography.fernet import Fernet
 import base64
 
-version = "1.3.0"
+version = "1.4.0"
 
 bufferSizeDef = 64 * 1024
 
@@ -37,13 +37,10 @@ def encryptFile(infile, outfile, passw, bufferSize=bufferSizeDef):
                 if path.samefile(infile, outfile):
                     raise ValueError("Input and output files are the same.")
             try:
-                with open(outfile, "wb") as fOut:
-                    # encrypt file stream
+                with open(outfile, "ab") as fOut:
                     encryptStream(fIn, fOut, passw, bufferSize)
-
             except IOError:
                 raise ValueError("Unable to write output file.")
-
     except IOError:
         raise ValueError("Unable to read input file.")
 
@@ -55,75 +52,55 @@ def encryptStream(fIn, fOut, passw, bufferSize=bufferSizeDef):
         raise ValueError("Password is too long.")
 
     iv1 = urandom(AESBlockSize)
-
     key = stretch(passw, iv1)
 
     iv0 = urandom(AESBlockSize)
-
     intKey = urandom(32)
 
     cipher0 = Cipher(algorithms.AES(intKey), modes.CBC(iv0), backend=default_backend())
     encryptor0 = cipher0.encryptor()
-
     hmac0 = hmac.HMAC(intKey, hashes.SHA256(), backend=default_backend())
 
     cipher1 = Cipher(algorithms.AES(key), modes.CBC(iv1), backend=default_backend())
     encryptor1 = cipher1.encryptor()
 
     c_iv_key = encryptor1.update(iv0 + intKey) + encryptor1.finalize()
-
     hmac1 = hmac.HMAC(key, hashes.SHA256(), backend=default_backend())
     hmac1.update(c_iv_key)
+    fOut.write(b"AES")
+    fOut.write(b"\x02") 
+    fOut.write(b"\x00")  
 
-    fOut.write(bytes("AES", "utf8"))
+    created_by = "OpenFileEncryptor" + version
+    created_by_tag = b"\x00" + bytes([1 + len("CREATED_BY" + created_by)])
+    fOut.write(created_by_tag)
+    fOut.write(b"CREATED_BY\x00" + bytes(created_by, "utf-8"))
 
-    fOut.write(b"\x02")
-
-    fOut.write(b"\x00")
-
-    cby = "OpenFileEncryptor" + version
-
-    fOut.write(b"\x00" + bytes([1 + len("CREATED_BY" + cby)]))
-
-    fOut.write(bytes("CREATED_BY", "utf8") + b"\x00" + bytes(cby, "utf8"))
-
-    fOut.write(b"\x00\x80")
-
-    for i in range(128):
-        fOut.write(b"\x00")
-
-    fOut.write(b"\x00\x00")
-
+    fOut.write(b"\x00\x80") 
+    fOut.write(b"\x00" * 128)  
+    fOut.write(b"\x00\x00")  
     fOut.write(iv1)
-
     fOut.write(c_iv_key)
-
     fOut.write(hmac1.finalize())
-
     while True:
         fdata = fIn.read(bufferSize)
-
-        bytesRead = len(fdata)
-
-        if bytesRead < bufferSize:
-            fs16 = bytes([bytesRead % AESBlockSize])
-            if bytesRead % AESBlockSize == 0:
-                padLen = 0
-            else:
-                padLen = 16 - bytesRead % AESBlockSize
-            fdata += bytes([padLen]) * padLen
+        if not fdata:
+            break
+        if len(fdata) < bufferSize:
+            pad_len = AESBlockSize - (len(fdata) % AESBlockSize)
+            if pad_len == 0:
+                pad_len = AESBlockSize
+            fdata += bytes([pad_len]) * pad_len
             cText = encryptor0.update(fdata) + encryptor0.finalize()
             hmac0.update(cText)
             fOut.write(cText)
-            break
+            fOut.write(bytes([pad_len]))
+            fOut.write(hmac0.finalize())
+            return
         else:
             cText = encryptor0.update(fdata)
             hmac0.update(cText)
             fOut.write(cText)
-
-    fOut.write(fs16)
-
-    fOut.write(hmac0.finalize())
 
 def decryptFile(infile, outfile, passw, bufferSize=bufferSizeDef):
     try:
@@ -132,20 +109,18 @@ def decryptFile(infile, outfile, passw, bufferSize=bufferSizeDef):
                 if path.samefile(infile, outfile):
                     raise ValueError("Input and output files are the same.")
             try:
-                with open(outfile, "wb") as fOut:
+                with open(outfile, "ab") as fOut:
                     try:
                         decryptStream(fIn, fOut, passw, bufferSize)
                     except ValueError as exd:
                         raise ValueError(str(exd))
-
             except IOError:
                 raise ValueError("Unable to write output file.")
             except ValueError as exd:
-                remove(outfile)
                 raise ValueError(str(exd))
-
     except IOError:
         raise ValueError("Unable to read input file.")
+
 
 def decryptStream(fIn, fOut, passw, bufferSize=bufferSizeDef, inputLength=None):
     if inputLength is not None:
@@ -154,14 +129,15 @@ def decryptStream(fIn, fOut, passw, bufferSize=bufferSizeDef, inputLength=None):
             DeprecationWarning,
             stacklevel=2,
         )
+
     if bufferSize % AESBlockSize != 0:
         raise ValueError("Buffer size must be a multiple of AES block size")
 
     if len(passw) > maxPassLen:
         raise ValueError("Password is too long.")
 
-    if not hasattr(fIn, "peek"):
-        fIn = io.BufferedReader(getBufferableFileobj(fIn), bufferSize)
+    if not hasattr(fIn, "read"):
+        raise ValueError("Invalid input stream")
 
     fdata = fIn.read(3)
     if fdata != b"AES":
@@ -173,12 +149,10 @@ def decryptStream(fIn, fOut, passw, bufferSize=bufferSizeDef, inputLength=None):
 
     if fdata != b"\x02":
         raise ValueError(
-            "OFE lib is only compatible with version "
-            "2 of the AES Crypt file format."
+            "OFE lib is only compatible with version 2 of the AES Crypt file format."
         )
 
     fIn.read(1)
-
     while True:
         fdata = fIn.read(2)
         if len(fdata) != 2:
@@ -211,7 +185,6 @@ def decryptStream(fIn, fOut, passw, bufferSize=bufferSizeDef, inputLength=None):
     decryptor1 = cipher1.decryptor()
 
     iv_key = decryptor1.update(c_iv_key) + decryptor1.finalize()
-
     iv0 = iv_key[:16]
     intKey = iv_key[16:]
 
@@ -219,29 +192,31 @@ def decryptStream(fIn, fOut, passw, bufferSize=bufferSizeDef, inputLength=None):
     decryptor0 = cipher0.decryptor()
 
     hmac0Act = hmac.HMAC(intKey, hashes.SHA256(), backend=default_backend())
+    ciphertext = b""
+    while True:
+        chunk = fIn.read(bufferSize)
+        if not chunk:
+            break
+        ciphertext += chunk
 
-    last_block_reached = False
-    while not last_block_reached:
-        cText = fIn.read(bufferSize)
-        if len(fIn.peek(32 + 1)) < 32 + 1:
-            last_block_reached = True
-            cText += fIn.read()
-            fs16 = cText[-32 - 1]
-            hmac0 = cText[-32:]
-            cText = cText[: -32 - 1]
+    if len(ciphertext) < 33:
+        raise ValueError("File is too short or corrupted.")
 
-        hmac0Act.update(cText)
-        pText = decryptor0.update(cText)
+    fs16 = ciphertext[-33]
+    hmac0 = ciphertext[-32:]
+    ciphertext = ciphertext[:-33]
 
-        if last_block_reached:
-            toremove = (16 - fs16) % 16
-            if toremove:
-                pText = pText[:-toremove]
+    hmac0Act.update(ciphertext)
+    pText = decryptor0.update(ciphertext)
+    toremove = (16 - fs16) % 16
+    if toremove:
+        pText = pText[:-toremove]
 
-        fOut.write(pText)
+    fOut.write(pText)
 
     if hmac0 != hmac0Act.finalize():
         raise ValueError("Bad HMAC (file is corrupted).")
+
 
 class BufferableFileobj:
     def __init__(self, fileobj):
@@ -294,3 +269,13 @@ def decrypt_message(key, encrypted_message):
 
 def get_filename(file_path):
     return os.path.basename(file_path)
+
+def count_files(file_path):
+    total = 0
+    with os.scandir(file_path) as entries:
+        for entry in entries:
+            if entry.is_file():
+                total += 1
+            elif entry.is_dir():
+                total += count_files(entry.path)
+    return total
