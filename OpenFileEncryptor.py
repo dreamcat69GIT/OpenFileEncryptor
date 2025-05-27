@@ -395,10 +395,7 @@ def walking_by_dirs(dir, password):
                         console_write(index, f"[+] {decriptedword}: {path} ({encrypted_files_count}/{totalfiles})\n")
                         if totalfiles == encrypted_files_count:
                             index = '0.0'
-                            console_write(index, f"[+] {decryption_complete}!\n")
-                        else:
-                            pass
-                            
+                            console_write(index, f"[+] {decryption_complete}!\n")    
                 except Exception as ex:
                     encrypted_files_count += 1
                     index = '0.0'
@@ -406,15 +403,11 @@ def walking_by_dirs(dir, password):
                     if totalfiles == encrypted_files_count:
                             index = '0.0'
                             console_write(index, f"[+] {decryption_complete}!\n")
-                    else:
-                        pass
             else:
                 walking_by_dirs(path, password)
     except Exception as e:
         index = '0.0'
         console_write(index, f"[!] Ошибка доступа к {dir}: {e}\n")
-
-
 
 def walking_by_dirs2(dir, password):
     global encrypted_files_count
@@ -430,8 +423,6 @@ def walking_by_dirs2(dir, password):
                     if totalfiles == encrypted_files_count:
                         index = '0.0'
                         console_write(index, f"[+] {encryption_complete}!\n")
-                    else:
-                        pass    
                 except Exception as ex:
                     encrypted_files_count += 1
                     index = '0.0'
@@ -439,8 +430,6 @@ def walking_by_dirs2(dir, password):
                     if totalfiles == encrypted_files_count:
                         index = '0.0'
                         console_write(index, f"[+] {encryption_complete}!\n")
-                    else:
-                        pass    
             else:
                 walking_by_dirs2(path, password)
     except Exception as e:
