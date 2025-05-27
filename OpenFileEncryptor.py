@@ -393,9 +393,21 @@ def walking_by_dirs(dir, password):
                         encrypted_files_count += 1
                         index = '0.0'
                         console_write(index, f"[+] {decriptedword}: {path} ({encrypted_files_count}/{totalfiles})\n")
+                        if totalfiles == encrypted_files_count:
+                            index = '0.0'
+                            console_write(index, f"[+] {decryption_complete}!\n")
+                        else:
+                            pass
+                            
                 except Exception as ex:
+                    encrypted_files_count += 1
                     index = '0.0'
                     console_write(index, f"[!] {decryptionfail} {path}: {ex}\n")
+                    if totalfiles == encrypted_files_count:
+                            index = '0.0'
+                            console_write(index, f"[+] {decryption_complete}!\n")
+                    else:
+                        pass
             else:
                 walking_by_dirs(path, password)
     except Exception as e:
@@ -415,9 +427,20 @@ def walking_by_dirs2(dir, password):
                     encrypted_files_count += 1
                     index = '0.0'
                     console_write(index, f"[+] {encriptedword}: {path} ({encrypted_files_count}/{totalfiles})\n")
+                    if totalfiles == encrypted_files_count:
+                        index = '0.0'
+                        console_write(index, f"[+] {encryption_complete}!\n")
+                    else:
+                        pass    
                 except Exception as ex:
+                    encrypted_files_count += 1
                     index = '0.0'
                     console_write(index, f"[!] {encryptionfail} {path}: {ex}\n")
+                    if totalfiles == encrypted_files_count:
+                        index = '0.0'
+                        console_write(index, f"[+] {encryption_complete}!\n")
+                    else:
+                        pass    
             else:
                 walking_by_dirs2(path, password)
     except Exception as e:
