@@ -1,1 +1,1 @@
-Прогресс шифрования и еще какие-то изменения, я хз
+File counting during encryption has been implemented. Notifications upon completion of encryption and decryption operations have been added. Modifications have been made to the file writing algorithm. After such a long time, an update was released :)
