@@ -9,7 +9,7 @@ from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 from cryptography.fernet import Fernet
 import base64
 
-version = "1.4.0"
+version = "1.4.2"
 
 bufferSizeDef = 64 * 1024
 
