@@ -12,6 +12,8 @@ import threading
 import configparser
 import os
 import requests
+import ctypes
+import subprocess
 
 try:
     executable_path = os.path.dirname(os.path.abspath(__file__))
@@ -31,15 +33,16 @@ encrypted_files_count = 0
 
 icon_image = CTkImage(Image.open(f'{image_exit_path}'), size=(30, 30))
 
-version = '1.4.0'
+version = '1.4.2'
+type = "realise"
+
+program_path = os.getcwd()
+if os.name == "nt":
+    old_filename = "oldOFE.exe"
+else:
+    old_filename = "oldOFE"
 
 def delete_old_versions():
-    global program_path, old_filename
-    program_path = os.getcwd()
-    if os.name == "nt":
-        old_filename = "oldOFE.exe"
-    elif os.name == "posix":
-        old_filename = "oldOFE"
     try:
         os.remove(os.path.join(program_path, old_filename))
     except FileNotFoundError:
@@ -51,34 +54,68 @@ delete_old_versions()
 def pre_update():
     thread = threading.Thread(target=update)
     thread.start()
-    button_update.destroy()
-    os.rename(sys.argv[0], os.path.join(program_path, old_filename))
+    try:
+        button_update.destroy()
+    except Exception:
+        pass
+    try:
+        if type != "debug":
+            os.rename(sys.argv[0], os.path.join(program_path, old_filename))
+        else:
+            pass    
+    except Exception:
+        pass
+
 
 def close_window():
     updater_app.destroy()
 
 
 def update():
-    global filename
     filename = os.path.basename(download_url)
-    download_file(download_url, filename)
-
-
-def download_file(url, filename):
-    global new_filename
-    response = requests.get(url)
     if os.name == "nt":
         new_filename = f"{filename.split('.')[0]}_{current_version}.exe"
-    elif os.name == "posix":
-        new_filename = f"{filename.split('.')[0]}_{current_version}"    
-    with open(new_filename, "wb") as f:
-        f.write(response.content)
-    start_new_version()
+    else:
+        new_filename = f"{filename.split('.')[0]}_{current_version}"
+    download_file(download_url, new_filename)
 
-def start_new_version():
-    program_path = os.getcwd()
-    full_path = os.path.join(program_path, new_filename)
-    os.execl(full_path, *sys.argv)
+
+def download_file(url, new_filename):
+    
+    response = requests.get(url, timeout=60)
+    response.raise_for_status()
+    new_path = os.path.join(program_path, new_filename)
+    with open(new_path, "wb") as f:
+        f.write(response.content)
+    try:        
+        start_new_version(new_path)
+    except Exception:
+        pass
+
+
+
+
+def start_new_version(full_path):
+    try:
+        if not os.path.exists(full_path):
+            raise FileNotFoundError(f"File not found: {full_path}")
+        elif os.name == "posix":           
+            os.chmod(full_path, 0o755)
+        elif os.name == "nt":
+            result = ctypes.windll.shell32.ShellExecuteW(
+                None, "open", full_path, None, None, 1
+            )
+            print(f"ShellExecuteW result: {result}")
+            if result <= 32:
+                raise RuntimeError(f"Error code: {result}")
+        else:
+            pass
+    except:
+        pass    
+            
+
+    
+
 
 def create_new_settings_file():
     config = configparser.ConfigParser()
@@ -395,7 +432,10 @@ def walking_by_dirs(dir, password):
                         console_write(index, f"[+] {decriptedword}: {path} ({encrypted_files_count}/{totalfiles})\n")
                         if totalfiles == encrypted_files_count:
                             index = '0.0'
-                            console_write(index, f"[+] {decryption_complete}!\n")    
+                            console_write(index, f"[+] {decryption_complete}!\n")
+                        else:
+                            pass
+                            
                 except Exception as ex:
                     encrypted_files_count += 1
                     index = '0.0'
@@ -403,11 +443,15 @@ def walking_by_dirs(dir, password):
                     if totalfiles == encrypted_files_count:
                             index = '0.0'
                             console_write(index, f"[+] {decryption_complete}!\n")
+                    else:
+                        pass
             else:
                 walking_by_dirs(path, password)
     except Exception as e:
         index = '0.0'
         console_write(index, f"[!] Ошибка доступа к {dir}: {e}\n")
+
+
 
 def walking_by_dirs2(dir, password):
     global encrypted_files_count
@@ -423,6 +467,8 @@ def walking_by_dirs2(dir, password):
                     if totalfiles == encrypted_files_count:
                         index = '0.0'
                         console_write(index, f"[+] {encryption_complete}!\n")
+                    else:
+                        pass    
                 except Exception as ex:
                     encrypted_files_count += 1
                     index = '0.0'
@@ -430,6 +476,8 @@ def walking_by_dirs2(dir, password):
                     if totalfiles == encrypted_files_count:
                         index = '0.0'
                         console_write(index, f"[+] {encryption_complete}!\n")
+                    else:
+                        pass    
             else:
                 walking_by_dirs2(path, password)
     except Exception as e:

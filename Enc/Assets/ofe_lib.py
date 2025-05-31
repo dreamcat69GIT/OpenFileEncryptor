@@ -50,13 +50,10 @@ def encryptStream(fIn, fOut, passw, bufferSize=bufferSizeDef):
 
     if len(passw) > maxPassLen:
         raise ValueError("Password is too long.")
-
     iv1 = urandom(AESBlockSize)
     key = stretch(passw, iv1)
-
     iv0 = urandom(AESBlockSize)
     intKey = urandom(32)
-
     cipher0 = Cipher(algorithms.AES(intKey), modes.CBC(iv0), backend=default_backend())
     encryptor0 = cipher0.encryptor()
     hmac0 = hmac.HMAC(intKey, hashes.SHA256(), backend=default_backend())
