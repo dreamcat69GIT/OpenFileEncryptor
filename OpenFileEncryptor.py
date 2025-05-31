@@ -34,7 +34,7 @@ encrypted_files_count = 0
 icon_image = CTkImage(Image.open(f'{image_exit_path}'), size=(30, 30))
 
 version = '1.4.2'
-type = "realise"
+type = "release"
 
 program_path = os.getcwd()
 if os.name == "nt":
