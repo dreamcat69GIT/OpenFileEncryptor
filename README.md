@@ -1,4 +1,1 @@
-# OpenFileEncryptor
-This open source project allows you to encrypt and decrypt files. The program supports two languages: Russian and English. The Exe version of the program is portable and can work without installing python. That's all, wish you pleasant work with the program.
-
-[![Donation alerts](https://img.shields.io/badge/Donation%20alerts-Donate-orange?style=for-the-badge)](https://www.donationalerts.com/r/cherret_and_dreamcat)
+<h1 align="center">OpenFileEncryptor 🔒🌐</h1><h3 align="center">OpenFileEncryptor is a powerful open-source tool for file encryption and decryption. The program features dual-language support (Russian and English) and is distributed as a portable EXE file that requires no Python installation.</h3>
